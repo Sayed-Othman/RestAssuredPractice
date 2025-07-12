@@ -7,7 +7,7 @@ on:
     branches: [ main ]
     
 permissions:
- contents: write
+  contents: write
 
 jobs:
   test-api:
@@ -32,15 +32,21 @@ jobs:
       - name: Push Docker image
         run: docker push sayedo/restassured-test:latest
 
-      - name: Run tests and generate Allure results
+      - name: Copy Allure results from container
         run: |
-          docker run --rm \
-          -v ${{ github.workspace }}/allure-results:/project/allure-results \
-          sayedo/restassured-test:latest bash -c "
-          mvn clean test &&
-          cp -r /app/allure-results/* /project/allure-results/
-          "
+          docker create --name test-container sayedo/restassured-test:latest
+          docker cp test-container:/app/allure-results ./allure-results
+          docker rm test-container
 
+      - name: Install Allure CLI
+        run: |
+          wget https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.24.0/allure-commandline-2.24.0.zip
+          unzip allure-commandline-2.24.0.zip -d allure-cli
+          sudo ln -s $PWD/allure-cli/allure-2.24.0/bin/allure /usr/bin/allure
+
+      - name: Generate Allure Report
+        run: |
+          allure generate ./allure-results -o ./allure-report --clean
 
       - name: List Allure Report files
         run: ls -la ./allure-report
@@ -48,9 +54,8 @@ jobs:
       - name: Deploy Allure report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            publish_dir: ./allure-report
-            publish_branch: gh-pages
-            force_orphan: true
-            enable_jekyll: false 
-
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          publish_branch: gh-pages
+          force_orphan: true
+          enable_jekyll: false
