@@ -1,4 +1,4 @@
-name: CI - Dockerized API Tests with Allure
+name: CI - Dockerized API Tests with Allure and GitHub Pages
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
@@ -23,21 +23,25 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Build Docker image (with tests and Allure)
+      - name: Build Docker image
         run: docker build -t sayedo/restassured-test:latest .
 
-      - name: Push Docker image to Docker Hub
+      - name: Push Docker image
         run: docker push sayedo/restassured-test:latest
 
-      - name: Run container to generate Allure report
+      - name: Run tests and generate Allure report
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}/allure-results:/app/allure-results \
-            -v ${{ github.workspace }}/allure-report:/app/allure-report \
-            sayedo/restassured-test:latest
+            -v ${{ github.workspace }}/allure-results:/project/allure-results \
+            -v ${{ github.workspace }}/allure-report:/project/allure-report \
+            sayedo/restassured-test:latest bash -c "
+              mvn test &&
+              allure generate /project/allure-results -o /project/allure-report --clean
+            "
 
-      - name: Upload Allure report
-        uses: actions/upload-artifact@v4
+      - name: Deploy Allure report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          name: allure-report
-          path: allure-report/
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          publish_branch: gh-pages
