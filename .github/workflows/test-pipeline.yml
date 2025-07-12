@@ -29,13 +29,15 @@ jobs:
       - name: Push Docker image
         run: docker push sayedo/restassured-test:latest
 
-      - name: Run container and copy Allure results
+      - name: Generate Allure report
         run: |
-          docker run --rm -v ${{ github.workspace }}/allure-results:/project/allure-results \
-            sayedo/restassured-test:latest
+         docker run --rm -v ${{ github.workspace }}/allure-results:/app/allure-results \
+         -v ${{ github.workspace }}/allure-report:/app/allure-report \
+         frankescobar/allure-docker-service:latest generate /app/allure-results -o /app/allure-report
 
-      - name: Upload Allure results
-        uses: actions/upload-artifact@v4
+      - name: Upload Allure report artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: allure-results
-          path: allure-results/
+          name: allure-report
+          path: allure-report
+
