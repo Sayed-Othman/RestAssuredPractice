@@ -32,14 +32,15 @@ jobs:
       - name: Push Docker image
         run: docker push sayedo/restassured-test:latest
 
-      - name: Generate Allure report inside container
+      - name: Run tests and generate Allure results
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}/allure-results:/project/allure-results \
-            -v ${{ github.workspace }}/allure-report:/project/allure-report \
-            sayedo/restassured-test:latest bash -c "
-              allure generate /project/allure-results -o /project/allure-report --clean
-            "
+          -v ${{ github.workspace }}/allure-results:/project/allure-results \
+          sayedo/restassured-test:latest bash -c "
+          mvn clean test &&
+          cp -r /app/allure-results/* /project/allure-results/
+          "
+
 
       - name: List Allure Report files
         run: ls -la ./allure-report
