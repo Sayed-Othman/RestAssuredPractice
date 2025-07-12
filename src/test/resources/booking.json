@@ -1,0 +1,11 @@
+{
+  "firstname": "Sayed",
+  "lastname": "Othman",
+  "totalprice": 400,
+  "depositpaid": true,
+  "bookingdates": {
+    "checkin": "2025-08-01",
+    "checkout": "2025-08-05"
+  },
+  "additionalneeds": "Pool"
+}
